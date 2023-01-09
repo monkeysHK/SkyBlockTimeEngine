@@ -26,7 +26,6 @@ class SkyScheduler {
             var len = this.routines.push(routine[i] instanceof SkyRoutine ? routine[i] : new SkyRoutine(routine[i]));
             this.routines[len - 1].attachScheduler(this, len - 1);
         }
-        this.verified = false;
     }
     grandTrigger() {
         // Trigger children routines before triggering master
@@ -50,7 +49,7 @@ class SkyScheduler {
         if (!this.masterSwitch || this.grand_state === SCHEDULE_STATES.ERRORED)
             return;
         var stateCounts = Array(Object.keys(SCHEDULE_STATES).length).fill(0);
-        if (!this.verified && !this.verify()) {
+        if (!this.verify()) {
             // overlap occurence => error, stop all.
             this.grandPause();
             this.callEventSet(this.grand_state = SCHEDULE_STATES.ERRORED);
