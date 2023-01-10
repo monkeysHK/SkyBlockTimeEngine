@@ -154,8 +154,8 @@ class SkyRoutine {
         // Call Tasks
         this.callEventSet(STATES.ONGOING);
         // Activate Next
-        console.log("onEventStart passing the ball to onEventEnd")
-        console.log(this.nextEventTime.valueOf(), this.routinePtr)
+        // console.log("onEventStart passing the ball to onEventEnd")
+        // console.log(this.nextEventTime.valueOf(), this.routinePtr)
         this.passTheBall(this.onEventEnd.bind(this), this.nextEventTime);
         // Schedule future termination if limits reached
         if ((this.limit && this.routineExecutions >= this.limit) || // reached execution limit
@@ -180,8 +180,8 @@ class SkyRoutine {
         // Call Tasks
         this.callEventSet(STATES.WAITING);
         // Activate Next
-        console.log("onEventEnd passing the ball to onEventStart")
-        console.log(this.nextEventTime.valueOf(), this.routinePtr)
+        // console.log("onEventEnd passing the ball to onEventStart")
+        // console.log(this.nextEventTime.valueOf(), this.routinePtr)
         this.passTheBall(this.onEventStart.bind(this), this.nextEventTime);
     }
     passTheBall(callback, startSkyDate) {
