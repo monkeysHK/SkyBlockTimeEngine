@@ -51,9 +51,8 @@ class SkyRoutine {
         // Get Initial State
         let currentDate = new SkyDate();
         if (currentDate < this.anchor) { // cond. 1: not started; cycleExecutions and routineExecutions remains 0
-            this.currentState = SCHEDULE_STATES.WAITING;
-            this.nextStart = this.anchor;
-            this.nextEnd = this.anchor + this.duration;
+            this.currentState = STATES.WAITING;
+            this.nextEventTime = this.anchor;
         } else {
             // seek lastCycleStart, lastRoutineStart, cycleExecutions, routineExecutions
             let lastCycleStart, lastRoutineStart;
@@ -68,14 +67,13 @@ class SkyRoutine {
                 lastRoutineStart = lastCycleStart = this.anchor + (this.cycleExecutions - 1) * this.cycleTime;
             }
             let doubleRoutineCount = (this.cycleExecutions - 1) * this.cycle.length;
-            // console.log("Seeing function check:", this.anchor, this.cycleExecutions, this.cycleTime, lastCycleStart, this.totalduration, this.totalbreak);
             let cumulated = 0;
             for (i = 0; i < this.cycle.length; i++) {
                 if (lastRoutineStart + (cumulated + this.cycle[i]) > currentDate) {
                     // this.routinePtr is only valid (> 0) when a routine will happen across the current date
                     this.routinePtr = i;
                     doubleRoutineCount += i;
-                    lastRoutineStart = lastCycleStart + cumulated;
+                    lastRoutineStart += cumulated;
                     break;
                 }
                 cumulated += this.cycle[i];
@@ -88,32 +86,26 @@ class SkyRoutine {
                 (this.limit && this.limit >= 0 && this.routineExecutions >= this.limit) || // cond. 3: execution limit reached
                 (this.until && currentDate >= this.until)) { // cond. 4: date limit reached
                 if (this.routinePtr % 2 === 1 || lastRoutineStart + this.getPeriod() < currentDate) { // cond: not ongoing
-                    this.currentState = SCHEDULE_STATES.STOPPED;
+                    this.currentState = STATES.STOPPED;
                 } else {
-                    this.currentState = SCHEDULE_STATES.ONGOING;
-                    this.nextEnd = lastRoutineStart + this.getPeriod();
+                    this.currentState = STATES.ONGOING;
+                    this.nextEventTime = lastRoutineStart + this.getPeriod();
                 }
             } else { // cond. 5: no limits reached
-                if (this.routinePtr % 2 === 1) { // cond: not ongoing
-                    this.currentState = SCHEDULE_STATES.WAITING;
-                    this.nextStart = lastRoutineStart + this.getPeriod();
-                    this.nextEnd = this.nextStart + this.getPeriod(1);
-                } else {
-                    this.currentState = SCHEDULE_STATES.ONGOING;
-                    this.nextEnd = lastRoutineStart + this.getPeriod();
-                    this.nextStart = this.nextEnd + this.getPeriod(1);
-                }
+                this.currentState = this.routinePtr % 2 === 0 ? STATES.ONGOING : STATES.WAITING;
+                this.nextEventTime = lastRoutineStart + this.getPeriod();
             }
+            // console.log("Seeking A:", lastCycleStart, lastRoutineStart);
         }
-        // console.log("Seeking:", lastCycleStart, lastRoutineStart, this.cycleExecutions, this.routineExecutions)
-        // console.log("Basic information:", this.anchor.valueOf(), this.cycle.map(v => v.valueOf()));
+        // console.log("Seeking B:", this.cycleExecutions, this.routineExecutions);
+        // console.log("Basic information:", this.anchor.valueOf(), this.cycle);
         // console.log("Limits:", currentDate.valueOf(), this.executeOnce, (this.until || 0).valueOf(), this.limit);
-        // console.log("State information:", this.currentState, this.nextStart, this.nextEnd);
+        // console.log("State information:", this.currentState, this.nextEventTime);
         // Trigger event
-        if (this.currentState === SCHEDULE_STATES.ONGOING)
+        if (this.currentState === STATES.ONGOING)
             this.onEventStart(true);
         else
-            this.onEventEnd();
+            this.onEventEnd(true);
     }
     pause() {
         for (let i in this.timeoutStack)
@@ -124,7 +116,7 @@ class SkyRoutine {
         this.timeoutStack.splice(this.timeoutStack.indexOf(id), 1);
     }
     addEvent(eventState, callback) {
-        if (Object.values(SCHEDULE_STATES).includes(eventState)) {
+        if (Object.values(STATES).includes(eventState)) {
             this.tasksId++;
             this.tasks[this.tasksId] = {
                 event: eventState,
@@ -136,58 +128,61 @@ class SkyRoutine {
         }
     }
     removeEvent(id) {
-        if (id in tasks) {
+        if (id in this.tasks) {
             delete this.tasks[id];
             return true;
         }
         return false;
     }
-    getPeriod(forward) {
-        if (this.routinePtr < 0)
+    getPeriod(forward) { // forward must be +ve integer
+        if (this.routinePtr + (forward || 0) < 0)
             return 0;
         return this.cycle[(this.routinePtr + (forward || 0)) % this.cycle.length];
     }
-    advancePeriod(forward) {
+    advancePeriod(forward) { // forward must be +ve integer
         this.routinePtr = (this.routinePtr + (forward || 0)) % this.cycle.length;
     }
     onEventStart(noStateChanges) {
         // State Changes
         if (!noStateChanges) {
-            this.nextStart = this.nextEnd + this.getPeriod(1); // Note: Calculation dependent on last state
-            if ((this.limit && this.routineExecutions >= this.limit) || // reached execution limit
-                (this.until && this.nextStart >= this.until)) // next start time reached/over date limit
-                this.nextStart = null;
-            this.currentState = SCHEDULE_STATES.ONGOING;
             this.advancePeriod(1);
+            this.nextEventTime += this.getPeriod(0); // Note: Calculation dependent on last state
+            this.currentState = STATES.ONGOING;
             this.routineExecutions++;
             this.cycleExecutions += this.routinePtr === 0 ? 1 : 0;
         }
         // Call Tasks
-        this.callEventSet(SCHEDULE_STATES.ONGOING);
+        this.callEventSet(STATES.ONGOING);
         // Activate Next
-        // console.log("onEventStart passing the ball to onEventEnd")
-        // console.log(this.next_end, this.next_start)
-        this.passTheBall(this.onEventEnd.bind(this), this.nextEnd);
+        console.log("onEventStart passing the ball to onEventEnd")
+        console.log(this.nextEventTime.valueOf(), this.routinePtr)
+        this.passTheBall(this.onEventEnd.bind(this), this.nextEventTime);
+        // Schedule future termination if limits reached
+        if ((this.limit && this.routineExecutions >= this.limit) || // reached execution limit
+            (this.until && this.nextEventTime >= this.until)) // next start time reached/over date limit
+            this.nextEventTime = null;
     }
-    onEventEnd() {
-        if (!this.nextStart) {
+    onEventEnd(noStateChanges) {
+        // Check termination
+        if (!this.nextEventTime) {
             // State Changes
-            this.nextEnd = null;
-            this.currentState = SCHEDULE_STATES.STOPPED;
+            this.currentState = STATES.STOPPED;
             // Call Tasks
-            this.callEventSet(SCHEDULE_STATES.STOPPED);
-        } else {
-            // State Changes
-            this.nextEnd = this.nextStart + this.getPeriod(1);
-            this.currentState = SCHEDULE_STATES.WAITING;
-            this.advancePeriod(1);
-            // Call Tasks
-            this.callEventSet(SCHEDULE_STATES.WAITING);
-            // Activate Next
-            // console.log("onEventEnd passing the ball to onEventStart")
-            // console.log(this.next_start)
-            this.passTheBall(this.onEventStart.bind(this), this.nextStart);
+            this.callEventSet(STATES.STOPPED);
+            return;
         }
+        // State Changes
+        if (!noStateChanges) {
+            this.advancePeriod(1);
+            this.nextEventTime += this.getPeriod(0);
+            this.currentState = STATES.WAITING;
+        }
+        // Call Tasks
+        this.callEventSet(STATES.WAITING);
+        // Activate Next
+        console.log("onEventEnd passing the ball to onEventStart")
+        console.log(this.nextEventTime.valueOf(), this.routinePtr)
+        this.passTheBall(this.onEventStart.bind(this), this.nextEventTime);
     }
     passTheBall(callback, startSkyDate) {
         let now = new SkyDate();
@@ -212,17 +207,12 @@ class SkyRoutine {
     startCountdown(callback) {
         let _this = this;
         // align to system clock
-        let countTo = Math.min(this.nextStart, this.nextEnd) / RATIOS.magic,
+        let countTo = this.nextEventTime / RATIOS.magic,
             countToDate = new SkyDate(new SkyDuration(LOCALES.utc, countTo));
         let alignTout = setTimeout(function () {
             clearTimeout(alignTout);
             // now start actual countdown
-            let registered = false;
             let countdownIntr = setInterval(function () {
-                if (!registered) {
-                    _this.timeoutStack.push(countdownIntr);
-                    registered = true;
-                }
                 let now = Date.now() / 1000 - SKYBLOCK_EPOCH.UNIX_TS_UTC;
                 let utcSecondsRemain = Math.floor(countTo - now);
                 if (utcSecondsRemain <= 0)

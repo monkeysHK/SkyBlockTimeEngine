@@ -15,9 +15,9 @@ class SkyDuration {
         this.setDuration(locale, seconds, minutes, hours, days, months, years);
     }
     /**
-     * setTime(utc_seconds: number)  
-     * setTime(duration_string: string)  
-     * setTime(locale?: string, seconds?: number, minutes?: number, hours?: number, days?: number, months?: number, years?: number)  
+     * setDuration(utc_seconds: number)  
+     * setDuration(duration_string: string)  
+     * setDuration(locale?: string, seconds?: number, minutes?: number, hours?: number, days?: number, months?: number, years?: number)  
      * Due to different months having different number of days, UTC Time does not support Months and Years  
      * If first parameter is supplied with a number in UTC Seconds, it will define the duration.  
      * If first parameter is supplied with a text-based time notation, it will be passed to a text parser.  

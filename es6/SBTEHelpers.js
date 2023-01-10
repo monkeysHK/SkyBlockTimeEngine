@@ -75,11 +75,10 @@ const UNIT_LIMITS = [
         UPPER: 60
     }
 ];
-const SCHEDULE_STATES = {
+const STATES = {
     WAITING: 0,
     ONGOING: 1,
-    STOPPED: 2,
-    ERRORED: 3
+    STOPPED: 2
 };
 
 function checkNumber(n) {
@@ -102,7 +101,7 @@ function fmtTime(h, m, s, s_72th) {
 }
 
 function getFirstNumber( /* ...arguments */ ) {
-    for (i in arguments) {
+    for (let i in arguments) {
         if (!isNaN(arguments[i]))
             return Number(arguments[i]);
     }
