@@ -3,7 +3,7 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version beta_2
+ * @version 1.0
  */
 /**
  * **SkyRoutine**  
@@ -95,12 +95,7 @@ class SkyRoutine {
                 this.currentState = this.routinePtr % 2 === 0 ? STATES.ONGOING : STATES.WAITING;
                 this.nextEventTime = lastRoutineStart + this.getPeriod();
             }
-            // console.log("Seeking A:", lastCycleStart, lastRoutineStart);
         }
-        // console.log("Seeking B:", this.cycleExecutions, this.routineExecutions);
-        // console.log("Basic information:", this.anchor.valueOf(), this.cycle);
-        // console.log("Limits:", currentDate.valueOf(), this.executeOnce, (this.until || 0).valueOf(), this.limit);
-        // console.log("State information:", this.currentState, this.nextEventTime);
         // Trigger event
         if (this.currentState === STATES.ONGOING)
             this.onEventStart(true);
@@ -154,8 +149,6 @@ class SkyRoutine {
         // Call Tasks
         this.callEventSet(STATES.ONGOING);
         // Activate Next
-        // console.log("onEventStart passing the ball to onEventEnd")
-        // console.log(this.nextEventTime.valueOf(), this.routinePtr)
         this.passTheBall(this.onEventEnd.bind(this), this.nextEventTime);
         // Schedule future termination if limits reached
         if ((this.limit && this.routineExecutions >= this.limit) || // reached execution limit
@@ -180,14 +173,11 @@ class SkyRoutine {
         // Call Tasks
         this.callEventSet(STATES.WAITING);
         // Activate Next
-        // console.log("onEventEnd passing the ball to onEventStart")
-        // console.log(this.nextEventTime.valueOf(), this.routinePtr)
         this.passTheBall(this.onEventStart.bind(this), this.nextEventTime);
     }
     passTheBall(callback, startSkyDate) {
         let now = new SkyDate();
         let till = Math.floor(Math.max(startSkyDate - now, 0) / RATIOS.magic * 1000); // convert SBST seconds to UTC milliseconds
-        // console.log("Setting a function to call in ms: " + till)
         let _this = this;
         // Only schedule tasks within one day
         if (till < 86400000) {
@@ -199,7 +189,6 @@ class SkyRoutine {
         }
     }
     callEventSet(eventset) {
-        // console.log("Calling event set: " + eventset);
         for (let i in this.tasks)
             if (this.tasks[i].event === eventset)
                 this.tasks[i].cb(this.currentState);
