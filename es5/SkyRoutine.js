@@ -3,7 +3,7 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 1.0
+ * @version 2.0
  */
 /**
  * **SkyRoutine**  
@@ -19,12 +19,13 @@ function SkyRoutine(str) {
 /*** MEMBER FUNCTIONS ***/
 SkyRoutine.prototype.trigger = function(str) {
     this.definition = str || this.definition;
-    var data = SkyRoutine.routineTextParser(this.definition);
+    var data = this.routineTextParser(this.definition);
     // Calculations
-    var chosenLocale = checkLocale(data.anchor) || LOCALES.sbst;
+    var chosenLocale = h.checkLocale(data.anchor) || h.LOCALES.sbst;
     var i;
-    this.anchor = new SkyDate(data.anchor); // a SkyDate used as number
+    this.anchor = new this.SkyDateConstructor(data.anchor); // a SkyDate used as number
     this.totalduration = this.totalbreak = this.cycleExecutions = this.routineExecutions = 0;
+    this.currentEventTime = this.nextEventTime = undefined;
     this.routinePtr = -1;
     // Handle Cycle
     this.cycle = (data.cycle || "0|0").split("|");
@@ -46,11 +47,11 @@ SkyRoutine.prototype.trigger = function(str) {
         this.cycleLimit = Math.floor(this.limit / (this.cycle.length / 2));
     }
     if (!!data.until)
-        this.until = new SkyDate(data.until); // a SkyDate used as number
+        this.until = new this.SkyDateConstructor(data.until); // a SkyDate used as number
     // Get Initial State
-    var currentDate = new SkyDate();
+    var currentDate = new this.SkyDateConstructor();
     if (currentDate < this.anchor) { // cond. 1: not started; cycleExecutions and routineExecutions remains 0
-        this.currentState = STATES.WAITING;
+        this.currentState = h.STATES.WAITING;
         this.nextEventTime = this.anchor;
     } else {
         // seek lastCycleStart, lastRoutineStart, cycleExecutions, routineExecutions
@@ -85,18 +86,20 @@ SkyRoutine.prototype.trigger = function(str) {
             (this.limit && this.limit >= 0 && this.routineExecutions >= this.limit) || // cond. 3: execution limit reached
             (this.until && currentDate >= this.until)) { // cond. 4: date limit reached
             if (this.routinePtr % 2 === 1 || lastRoutineStart + this.getPeriod() < currentDate) { // cond: not ongoing
-                this.currentState = STATES.STOPPED;
+                this.currentState = h.STATES.STOPPED;
             } else {
-                this.currentState = STATES.ONGOING;
+                this.currentState = h.STATES.ONGOING;
+                this.currentEventTime = lastRoutineStart;
                 this.nextEventTime = lastRoutineStart + this.getPeriod();
             }
         } else { // cond. 5: no limits reached
-            this.currentState = this.routinePtr % 2 === 0 ? STATES.ONGOING : STATES.WAITING;
+            this.currentState = this.routinePtr % 2 === 0 ? h.STATES.ONGOING : h.STATES.WAITING;
+            this.currentEventTime = lastRoutineStart;
             this.nextEventTime = lastRoutineStart + this.getPeriod();
         }
     }
     // Trigger event
-    if (this.currentState === STATES.ONGOING)
+    if (this.currentState === h.STATES.ONGOING)
         this.onEventStart(true);
     else
         this.onEventEnd(true);
@@ -110,7 +113,7 @@ SkyRoutine.prototype.removeTimeout = function(id) {
     this.timeoutStack.splice(this.timeoutStack.indexOf(id), 1);
 }
 SkyRoutine.prototype.addEvent = function(eventState, callback) {
-    if (Object.values(STATES).includes(eventState)) {
+    if (Object.values(h.STATES).includes(eventState)) {
         this.tasksId++;
         this.tasks[this.tasksId] = {
             event: eventState,
@@ -140,13 +143,14 @@ SkyRoutine.prototype.onEventStart = function(noStateChanges) {
     // State Changes
     if (!noStateChanges) {
         this.advancePeriod(1);
+        this.currentEventTime = this.nextEventTime;
         this.nextEventTime += this.getPeriod(0); // Note: Calculation dependent on last state
-        this.currentState = STATES.ONGOING;
+        this.currentState = h.STATES.ONGOING;
         this.routineExecutions++;
         this.cycleExecutions += this.routinePtr === 0 ? 1 : 0;
     }
     // Call Tasks
-    this.callEventSet(STATES.ONGOING);
+    this.callEventSet(h.STATES.ONGOING);
     // Activate Next
     this.passTheBall(this.onEventEnd.bind(this), this.nextEventTime);
     // Schedule future termination if limits reached
@@ -158,25 +162,27 @@ SkyRoutine.prototype.onEventEnd = function(noStateChanges) {
     // Check termination
     if (!this.nextEventTime) {
         // State Changes
-        this.currentState = STATES.STOPPED;
+        this.currentState = h.STATES.STOPPED;
+        this.currentEventTime = undefined;
         // Call Tasks
-        this.callEventSet(STATES.STOPPED);
+        this.callEventSet(h.STATES.STOPPED);
         return;
     }
     // State Changes
     if (!noStateChanges) {
         this.advancePeriod(1);
+        this.currentEventTime = this.nextEventTime;
         this.nextEventTime += this.getPeriod(0);
-        this.currentState = STATES.WAITING;
+        this.currentState = h.STATES.WAITING;
     }
     // Call Tasks
-    this.callEventSet(STATES.WAITING);
+    this.callEventSet(h.STATES.WAITING);
     // Activate Next
     this.passTheBall(this.onEventStart.bind(this), this.nextEventTime);
 }
 SkyRoutine.prototype.passTheBall = function(callback, startSkyDate) {
-    var now = new SkyDate();
-    var till = Math.floor(Math.max(startSkyDate - now, 0) / RATIOS.magic * 1000); // convert SBST seconds to UTC milliseconds
+    var now = new this.SkyDateConstructor();
+    var till = Math.floor(Math.max(startSkyDate - now, 0) / h.RATIOS.magic * 1000); // convert SBST seconds to UTC milliseconds
     var _this = this;
     // Only schedule tasks within one day
     if (till < 86400000) {
@@ -195,26 +201,30 @@ SkyRoutine.prototype.callEventSet = function(eventset) {
 SkyRoutine.prototype.startCountdown = function(callback) {
     var _this = this;
     // align to system clock
-    var countTo = this.nextEventTime / RATIOS.magic,
-        countToDate = new SkyDate(new SkyDuration(LOCALES.utc, countTo));
+    var countTo = this.nextEventTime / h.RATIOS.magic,
+        countToDate = new this.SkyDateConstructor(new SkyDuration(h.LOCALES.sbst, this.nextEventTime)),
+        countFromDate = new this.SkyDateConstructor(new SkyDuration(h.LOCALES.sbst, this.currentEventTime));
     var alignTout = setTimeout(function () {
         clearTimeout(alignTout);
         // now start actual countdown
         var countdownIntr = setInterval(function () {
-            var now = Date.now() / 1000 - SKYBLOCK_EPOCH.UNIX_TS_UTC;
+            var now = Date.now() / 1000 - _this.EPOCH.UNIX_TS_UTC;
             var utcSecondsRemain = Math.floor(countTo - now);
             if (utcSecondsRemain <= 0)
                 clearTimeout(countdownIntr);
-            callback(utcSecondsRemain, countdownIntr, countToDate, _this.currentState);
+            callback(countdownIntr, utcSecondsRemain, countToDate, countFromDate, _this.currentState);
         }, 1000);
         // call it the first time
-        var now = Date.now() / 1000 - SKYBLOCK_EPOCH.UNIX_TS_UTC;
+        var now = Date.now() / 1000 - _this.EPOCH.UNIX_TS_UTC;
         var utcSecondsRemain = Math.floor(countTo - now);
-        callback(utcSecondsRemain, countdownIntr, countToDate, _this.currentState);
+        callback(countdownIntr, utcSecondsRemain, countToDate, countFromDate, _this.currentState);
     }, (new Date()).valueOf() % 1000);
 }
-/*** STATIC FUNCTIONS ***/
-SkyRoutine.routineTextParser = function(str) {
+/* Items pushed to prototype for inheritance purposes */
+SkyRoutine.prototype.SkyDateConstructor = SkyDate;
+SkyRoutine.prototype.EPOCH = h.SKYBLOCK_EPOCH;
+/* Helpers */
+SkyRoutine.prototype.routineTextParser = function(str) {
     var match;
     return {
         cycle: (match = str.match(/(?:\s|^)C\[(.*?)\]/)) ? match[1] : undefined, // pipe-separated list of duration expr or number
@@ -223,3 +233,7 @@ SkyRoutine.routineTextParser = function(str) {
         anchor: (match = str.match(/(?:\s|^)A\[(.*?)\]/)) ? match[1] : undefined // a date expr
     }
 }
+/**
+ * Pushed static members from previous editions into prototype
+ * in favour of customizability using inheritance.
+ **/

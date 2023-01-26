@@ -3,7 +3,7 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 1.0
+ * @version 2.0
  */
 /**
  * **SkyDuration**  
@@ -24,7 +24,7 @@ function SkyDuration(locale, seconds, minutes, hours, days, months, years) {
  *       > (e.g. "2y 3mo 1d 3h 2m 50s -U")  
  *       > trailing "-U" (UTC) and "-S" (SBST) defines the locale used in calculation; default is "S"  
  * Else, all parameters will be used to determine the duration.  
- * `Locale` should be LOCALES.utc or LOCALES.sbst.  
+ * `Locale` should be h.LOCALES.utc or h.LOCALES.sbst.  
  */
 SkyDuration.prototype.setDuration = function(locale, seconds, minutes, hours, days, months, years) {
     // Determine Duration in SBST Seconds
@@ -32,57 +32,49 @@ SkyDuration.prototype.setDuration = function(locale, seconds, minutes, hours, da
     var duration = 0;
     if (!isNaN(str)) {
         // If passed in a number, treat it as UTC seconds
-        this.locale = LOCALES.utc;
-        duration = Number(str) * RATIOS.magic;
+        this.locale = h.LOCALES.utc;
+        duration = Number(str) * h.RATIOS.magic;
     } else {
         // Else, parse time string
-        this.locale = checkLocale(str) || LOCALES.sbst;
-        var data = SkyDuration.durationTextParser(str);
+        this.locale = h.checkLocale(str) || h.LOCALES.sbst;
+        var data = this.durationTextParser(str);
         if (!Object.values(data).every(isNaN)) {
-            duration = (data[UNITS.second] || 0) + (data[UNITS.minute] || 0) * RATIOS[UNITS.minute] + (data[UNITS.hour] || 0) * RATIOS[UNITS.hour] + (data[UNITS.day] || 0) * RATIOS[UNITS.day];
-            if (this.locale === LOCALES.sbst)
-                duration += (data[UNITS.month] || 0) * RATIOS[UNITS.month] + (data[UNITS.year] || 0) * RATIOS[UNITS.year]; // month/year support for SBST
+            duration = (data[h.UNITS.second] || 0) + (data[h.UNITS.minute] || 0) * h.RATIOS[h.UNITS.minute] + (data[h.UNITS.hour] || 0) * h.RATIOS[h.UNITS.hour] + (data[h.UNITS.day] || 0) * h.RATIOS[h.UNITS.day];
+            if (this.locale === h.LOCALES.sbst)
+                duration += (data[h.UNITS.month] || 0) * h.RATIOS[h.UNITS.month] + (data[h.UNITS.year] || 0) * h.RATIOS[h.UNITS.year]; // month/year support for SBST
             else
-                duration *= RATIOS.magic; // Force duration value in SkyBlock seconds
+                duration *= h.RATIOS.magic; // Force duration value in SkyBlock seconds
         } else {
             // Add individual values passed to function
-            duration = (seconds || 0) + (minutes || 0) * RATIOS[UNITS.minute] + (hours || 0) * RATIOS[UNITS.hour] + (days || 0) * RATIOS[UNITS.day];
-            if (this.locale === LOCALES.sbst)
-                duration += (months || 0) * RATIOS[UNITS.month] + (years || 0) * RATIOS[UNITS.year]; // month/year support for SBST
+            duration = (seconds || 0) + (minutes || 0) * h.RATIOS[h.UNITS.minute] + (hours || 0) * h.RATIOS[h.UNITS.hour] + (days || 0) * h.RATIOS[h.UNITS.day];
+            if (this.locale === h.LOCALES.sbst)
+                duration += (months || 0) * h.RATIOS[h.UNITS.month] + (years || 0) * h.RATIOS[h.UNITS.year]; // month/year support for SBST
             else
-                duration *= RATIOS.magic; // Force duration value in SkyBlock seconds
+                duration *= h.RATIOS.magic; // Force duration value in SkyBlock seconds
         }
     }
     this.duration = Math.floor(duration);
     // SKYBLOCK Duration Calculations
-    this.sbstSeconds = this.duration % RATIOS[UNITS.minute];
-    this.sbstMinutes = Math.floor(this.duration % RATIOS[UNITS.hour] / RATIOS[UNITS.minute]);
-    this.sbstHours = Math.floor(this.duration % RATIOS[UNITS.day] / RATIOS[UNITS.hour]);
-    this.sbstDays = Math.floor(this.duration % RATIOS[UNITS.month] / RATIOS[UNITS.day]);
-    this.sbstMonths = Math.floor(this.duration % RATIOS[UNITS.year] / RATIOS[UNITS.month]);
-    this.sbstYears = Math.floor(this.duration / RATIOS[UNITS.year]);
+    this.sbstSeconds = this.duration % h.RATIOS[h.UNITS.minute];
+    this.sbstMinutes = Math.floor(this.duration % h.RATIOS[h.UNITS.hour] / h.RATIOS[h.UNITS.minute]);
+    this.sbstHours = Math.floor(this.duration % h.RATIOS[h.UNITS.day] / h.RATIOS[h.UNITS.hour]);
+    this.sbstDays = Math.floor(this.duration % h.RATIOS[h.UNITS.month] / h.RATIOS[h.UNITS.day]);
+    this.sbstMonths = Math.floor(this.duration % h.RATIOS[h.UNITS.year] / h.RATIOS[h.UNITS.month]);
+    this.sbstYears = Math.floor(this.duration / h.RATIOS[h.UNITS.year]);
     // UTC Duration Calculations
-    this.utc72thSecs = this.duration % RATIOS.magic;
-    var totalUtcSecs = Math.floor(this.duration / RATIOS.magic);
-    this.utcSeconds = totalUtcSecs % RATIOS[UNITS.minute];
-    this.utcMinutes = Math.floor(totalUtcSecs % RATIOS[UNITS.hour] / RATIOS[UNITS.minute]);
-    this.utcHours = Math.floor(totalUtcSecs % RATIOS[UNITS.day] / RATIOS[UNITS.hour]);
-    this.utcDays = Math.floor(totalUtcSecs / RATIOS[UNITS.day]);
+    this.utc72thSecs = this.duration % h.RATIOS.magic;
+    var totalUtcSecs = Math.floor(this.duration / h.RATIOS.magic);
+    this.utcSeconds = totalUtcSecs % h.RATIOS[h.UNITS.minute];
+    this.utcMinutes = Math.floor(totalUtcSecs % h.RATIOS[h.UNITS.hour] / h.RATIOS[h.UNITS.minute]);
+    this.utcHours = Math.floor(totalUtcSecs % h.RATIOS[h.UNITS.day] / h.RATIOS[h.UNITS.hour]);
+    this.utcDays = Math.floor(totalUtcSecs / h.RATIOS[h.UNITS.day]);
     // Representations
     // Computing Representation [years, months, days, hours, minutes, seconds]
     this.computing = {};
     this.computing.SBST = [this.sbstYears, this.sbstMonths, this.sbstDays, this.sbstHours, this.sbstMinutes, this.sbstSeconds];
     // Time Strings
-    this.utcString = [
-        this.utcDays !== 0 ? String(this.utcDays) + "d" : null,
-        fmtTime(this.utcHours, this.utcMinutes, this.utcSeconds, this.utc72thSecs)
-    ].filter(Boolean).join(" ");
-    this.sbstString = [
-        this.sbstYears !== 0 ? String(this.sbstYears) + "y" : null,
-        this.sbstMonths !== 0 ? String(this.sbstMonths) + "m" : null,
-        this.sbstDays !== 0 ? String(this.sbstDays) + "d" : null,
-        fmtTime(this.sbstHours, this.sbstMinutes, this.sbstSeconds)
-    ].filter(Boolean).join(" ");
+    this.utcString = h.fmtFullDuration(0, 0, this.utcDays, this.utcHours, this.utcMinutes, this.utcSeconds, this.utc72thSecs);
+    this.sbstString = h.fmtFullDuration(this.sbstYears, this.sbstMonths, this.sbstDays, this.sbstHours, this.sbstMinutes, this.sbstSeconds);
     return this;
 }
 SkyDuration.prototype.toString = function() {
@@ -92,17 +84,16 @@ SkyDuration.prototype.valueOf = function() {
     return this.duration;
 }
 SkyDuration.prototype.addUTCTime = function(unit, value) {
-    if (unit >= UNITS.day && unit <= UNITS.second)
-        this.addSBSTTime(UNITS.second, checkNumber(value) * RATIOS[unit] * RATIOS.magic);
+    if (unit >= h.UNITS.day && unit <= h.UNITS.second)
+        this.addSBSTTime(h.UNITS.second, h.checkNumber(value) * h.RATIOS[unit] * h.RATIOS.magic);
     return this;
 }
 SkyDuration.prototype.addSBSTTime = function(unit, value) {
-    if (unit >= UNITS.year && unit <= UNITS.second)
-        this.setDuration(LOCALES.sbst, this.valueOf() + checkNumber(value));
+    if (unit >= h.UNITS.year && unit <= h.UNITS.second)
+        this.setDuration(h.LOCALES.sbst, this.valueOf() + h.checkNumber(value));
     return this;
 }
-/*** STATIC FUNCTIONS ***/
-SkyDuration.durationTextParser = function(str) {
+SkyDuration.prototype.durationTextParser = function(str) {
     var match;
     return [
         (match = str.match(/(?:\s|^)(\d+)y(?:\s|$)/i)) ? Number(match[1]) : undefined,
@@ -113,3 +104,7 @@ SkyDuration.durationTextParser = function(str) {
         (match = str.match(/(?:\s|^)(\d+)s(?:\s|$)/i)) ? Number(match[1]) : undefined,
     ]
 }
+/**
+ * Pushed static members from previous editions into prototype
+ * in favour of customizability using inheritance.
+ **/

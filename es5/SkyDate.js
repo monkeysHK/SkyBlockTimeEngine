@@ -3,7 +3,7 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 1.0
+ * @version 2.0
  */
 /**
  * **SkyDate**  
@@ -29,7 +29,7 @@ function SkyDate(locale, year, monthIndex, day, hours, minutes, seconds) {
  *       > (e.g. "Y189 M3 D27 00:00:00 -S" for 27th Late-Spring of Year 189)  
  *       > trailing "-U" (UTC) and "-S" (SBST) defines the locale used in calculation; default is "S"  
  * Else, all parameters will be used to determine the date.  
- * `Locale` should be LOCALES.utc or LOCALES.sbst.  
+ * `Locale` should be h.LOCALES.utc or h.LOCALES.sbst.  
  * In the 2nd/3rd case: Specifications for all units are optional, but at least one must be present.  
  * The largest specified unit is called the Most Significant Unit (MSU):  
  *       > If a unit higher than the MSU is not specified, it will take its value in the current time.  
@@ -37,49 +37,49 @@ function SkyDate(locale, year, monthIndex, day, hours, minutes, seconds) {
  */
 SkyDate.prototype.setTime = function(locale, year, monthIndex, day, hours, minutes, seconds) {
     if (locale instanceof SkyDuration) {
-        this.locale = LOCALES.sbst;
+        this.locale = h.LOCALES.sbst;
         this.duration = locale; // note: this must be a SkyDuration since SkyBlock Epoch
     } else if (locale instanceof Date) {
-        this.locale = LOCALES.utc;
-        this.duration = getDurationFromUTCUnixTime(locale.valueOf() / 1000);
+        this.locale = h.LOCALES.utc;
+        this.duration = this.durationFromUTCUnixTime(locale.valueOf() / 1000);
     } else if (!isNaN(locale)) {
         // If passed in a number, treat it as UTC seconds since Unix Epoch
-        this.locale = LOCALES.utc;
-        this.duration = getDurationFromUTCUnixTime(Number(locale));
+        this.locale = h.LOCALES.utc;
+        this.duration = this.durationFromUTCUnixTime(Number(locale));
     } else {
         var str = ["string", "number"].includes(typeof locale) ? String(locale) : "";
-        this.locale = checkLocale(str) || LOCALES.sbst;
+        this.locale = h.checkLocale(str) || h.LOCALES.sbst;
         var meme = [year, monthIndex, day, hours, minutes, seconds];
-        var data = SkyDate.dateTextParser(str);
-        var current = SkyDate.currentTime();
+        var data = this.dateTextParser(str);
+        var current = this.currentTime();
         var most_significant, i;
         for (i = 0; i < 6; i++) {
             if (isNaN(most_significant)) {
                 if (!(isNaN(meme[i]) && isNaN(data[i])))
                     most_significant = i; // on most significant
-                meme[i] = getFirstNumber(meme[i], data[i], current[this.locale][i]); // before/on most significant: default current
+                meme[i] = h.getFirstNumber(meme[i], data[i], current[this.locale][i]); // before/on most significant: default current
             } else {
-                meme[i] = getFirstNumber(meme[i], data[i], UNIT_LIMITS[i].LOWER); // after most significant: default lowest
+                meme[i] = h.getFirstNumber(meme[i], data[i], h.UNIT_LIMITS[i].LOWER); // after most significant: default lowest
             }
         }
-        if (this.locale === LOCALES.utc) {
-            var ts = Date.UTC(meme[UNITS.year], meme[UNITS.month], meme[UNITS.day], meme[UNITS.hour], meme[UNITS.minute], meme[UNITS.second]) / 1000;
-            this.duration = getDurationFromUTCUnixTime(ts);
+        if (this.locale === h.LOCALES.utc) {
+            var ts = Date.UTC(meme[h.UNITS.year], meme[h.UNITS.month], meme[h.UNITS.day], meme[h.UNITS.hour], meme[h.UNITS.minute], meme[h.UNITS.second]) / 1000;
+            this.duration = this.durationFromUTCUnixTime(ts);
         } else {
-            this.duration = new SkyDuration(LOCALES.sbst,
-                meme[UNITS.second] || 0, // 0-60
-                meme[UNITS.minute] || 0, // 0-60
-                meme[UNITS.hour] || 0, // 0-60
-                meme[UNITS.day] - 1, // 1-31
-                meme[UNITS.month], // 0-11
-                meme[UNITS.year] - 1); // 1-inf
+            this.duration = new SkyDuration(h.LOCALES.sbst,
+                meme[h.UNITS.second] || 0, // 0-60
+                meme[h.UNITS.minute] || 0, // 0-60
+                meme[h.UNITS.hour] || 0, // 0-60
+                meme[h.UNITS.day] - 1, // 1-31
+                meme[h.UNITS.month], // 0-11
+                meme[h.UNITS.year] - 1); // 1-inf
         }
         /*
         // if using non-exact date expression, and date already passed, shift to next occurence
-        if ((most_significant || 0) > 0 && (this.duration.valueOf() + SKYBLOCK_EPOCH.UNIX_TS_SBST) < (Date.now() / 1000 * RATIOS.magic)) {
-            if (this.locale === LOCALES.utc) {
+        if ((most_significant || 0) > 0 && (this.duration.valueOf() + this.EPOCH.UNIX_TS_SBST) < (Date.now() / 1000 * h.RATIOS.magic)) {
+            if (this.locale === h.LOCALES.utc) {
                 var tempdate = getDateFromDuration(this.duration);
-                tempdate["setUTC" + DATE_FUNC_MAP[most_significant - 1]](tempdate["getUTC" + DATE_FUNC_MAP[most_significant - 1]]() + 1);
+                tempdate["setUTC" + h.DATE_FUNC_MAP[most_significant - 1]](tempdate["getUTC" + h.DATE_FUNC_MAP[most_significant - 1]]() + 1);
                 this.duration = getDurationFromUTCUnixTime(tempdate.valueOf() / 1000);
             }
             else {
@@ -89,7 +89,7 @@ SkyDate.prototype.setTime = function(locale, year, monthIndex, day, hours, minut
         */
     }
     // UTC Date
-    this.date = getDateFromDuration(this.duration);
+    this.date = this.dateFromDuration(this.duration);
     // SKYBLOCK Date
     this.sbstFullYear = this.duration.sbstYears + 1;
     this.sbstMonth = this.duration.sbstMonths;
@@ -102,55 +102,57 @@ SkyDate.prototype.setTime = function(locale, year, monthIndex, day, hours, minut
     this.computing = {};
     this.computing.SBST = [this.sbstFullYear, this.sbstMonth, this.sbstDate, this.sbstHour, this.sbstMinute, this.sbstSecond];
     // Ordinal Dates
-    this.sbstOrdinalDate = SkyDate.toOrdinal(this.sbstDate);
-    this.utcOrdinalDate = SkyDate.toOrdinal(this.date.getUTCDate());
-    this.localOrdinalDate = SkyDate.toOrdinal(this.date.getDate());
+    this.sbstOrdinalDate = h.toOrdinal(this.sbstDate);
+    this.utcOrdinalDate = h.toOrdinal(this.date.getUTCDate());
+    this.localOrdinalDate = h.toOrdinal(this.date.getDate());
     // Full/Short Month
-    this.sbstFullMonth = SkyDate.FULLMONTHS_SBST[this.sbstMonth];
-    this.utcFullMonth = SkyDate.FULLMONTHS_UTC[this.date.getUTCMonth()];
-    this.localFullMonth = SkyDate.FULLMONTHS_UTC[this.date.getMonth()];
-    this.sbstShortMonth = SkyDate.SHORTMONTHSB[this.sbstMonth];
-    this.utcShortMonth = SkyDate.SHORTMONTHRL[this.date.getUTCMonth()];
-    this.localShortMonth = SkyDate.SHORTMONTHRL[this.date.getMonth()];
+    this.sbstFullMonth = this.FULLMONTHS_SBST[this.sbstMonth];
+    this.utcFullMonth = this.FULLMONTHS_UTC[this.date.getUTCMonth()];
+    this.localFullMonth = this.FULLMONTHS_UTC[this.date.getMonth()];
+    this.sbstShortMonth = this.SHORTMONTHS_SBST[this.sbstMonth];
+    this.utcShortMonth = this.SHORTMONTHS_UTC[this.date.getUTCMonth()];
+    this.localShortMonth = this.SHORTMONTHS_UTC[this.date.getMonth()];
     // ref: Date.__proto__.toDateString
-    this.sbstDateString = this.sbstOrdinalDate + " " + this.sbstFullMonth + " Y" + this.sbstFullYear;
+    this.sbstDateString = h.getMsg("formatSBSTDate", this.sbstFullYear, this.sbstFullMonth, this.sbstDate, this.sbstOrdinalDate);
     // ref: Date.__proto__.toTimeString
-    this.sbstTimeString = SkyDate.to12HourTime(this.sbstHour, this.sbstMinute);
+    var hour12 = (this.sbstHour % 12) === 0 ? 12 : this.sbstHour % 12;
+    this.sbstTimeString = h.getMsg("formatSBSTTime", hour12.toString().padStart(2, "0"),
+        this.sbstMinute.toString().padStart(2, "0"), h.FMTMSG.AMPM[this.sbstHour < 12 ? 0 : 1]);
     // ref: Date.__proto__.toString
-    this.sbstString = this.sbstDateString + ", " + this.sbstTimeString;
+    this.sbstString = h.getMsg("formatSBSTFullDate", this.sbstDateString, this.sbstTimeString);
     // Timestamps
     this.SKYBLOCK_TS_SBST = this.duration.valueOf(); // The SKYBLOCK timestamp (seconds from SkyBlock Epoch) to this instance using SBST units
-    this.SKYBLOCK_TS_UTC = Math.floor(this.duration.valueOf() / RATIOS.magic); // The SKYBLOCK timestamp (seconds from SkyBlock Epoch) to this instance using UTC units
-    this.UNIX_TS_SBST = SKYBLOCK_EPOCH.UNIX_TS_SBST + this.SKYBLOCK_TS_SBST; // The UNIX Timestamp (seconds from Unix Epoch) to this instance using SBST units
-    this.UNIX_TS_UTC = SKYBLOCK_EPOCH.UNIX_TS_UTC + this.SKYBLOCK_TS_UTC; // The UNIX Timestamp (seconds from Unix Epoch) to this instance using UTC units
+    this.SKYBLOCK_TS_UTC = Math.floor(this.duration.valueOf() / h.RATIOS.magic); // The SKYBLOCK timestamp (seconds from SkyBlock Epoch) to this instance using UTC units
+    this.UNIX_TS_SBST = this.EPOCH.UNIX_TS_SBST + this.SKYBLOCK_TS_SBST; // The UNIX Timestamp (seconds from Unix Epoch) to this instance using SBST units
+    this.UNIX_TS_UTC = this.EPOCH.UNIX_TS_UTC + this.SKYBLOCK_TS_UTC; // The UNIX Timestamp (seconds from Unix Epoch) to this instance using UTC units
     return this; // note: this.valueOf() == SKYBLOCK_TS_SBST
 }
 /* Setters */
 SkyDate.prototype.setUTCTimestamp = function(ts) {
     // ts in UTC seconds (not ms)!
-    return this.setTime(getDurationFromUTCUnixTime(ts));
+    return this.setTime(this.durationFromUTCUnixTime(ts));
 }
 SkyDate.prototype.setSBSTTimestamp = function(ts) {
     // ts in SBST seconds (not ms)!
-    return this.setTime(new SkyDuration(LOCALES.sbst, ts));
+    return this.setTime(new SkyDuration(h.LOCALES.sbst, ts));
 }
 SkyDate.prototype.addDuration = function(sbstSeconds) {
-    this.duration.addSBSTTime(UNITS.second, sbstSeconds);
+    this.duration.addSBSTTime(h.UNITS.second, sbstSeconds);
     return this.setTime(this.duration);
 }
 SkyDate.prototype.setSBSTTime = function(unit, value) {
-    if (unit >= UNITS.year && unit <= UNITS.second)
-        this.duration.addSBSTTime(unit, checkNumber(value) - this.computing.SBST[unit]);
+    if (unit >= h.UNITS.year && unit <= h.UNITS.second)
+        this.duration.addSBSTTime(unit, h.checkNumber(value) - this.computing.SBST[unit]);
     return this.setTime(this.duration);
 }
 SkyDate.prototype.setLocalTime = function(unit, value) {
-    if (unit >= UNITS.year && unit <= UNITS.second)
-        this.date["set" + DATE_FUNC_MAP[unit]](checkNumber(value));
+    if (unit >= h.UNITS.year && unit <= h.UNITS.second)
+        this.date["set" + h.DATE_FUNC_MAP[unit]](h.checkNumber(value));
     return this.setUTCTimestamp(this.date.valueOf() / 1000);
 }
 SkyDate.prototype.setUTCTime = function(unit, value) {
-    if (unit >= UNITS.year && unit <= UNITS.second)
-        this.date["setUTC" + DATE_FUNC_MAP[unit]](checkNumber(value));
+    if (unit >= h.UNITS.year && unit <= h.UNITS.second)
+        this.date["setUTC" + h.DATE_FUNC_MAP[unit]](h.checkNumber(value));
     return this.setUTCTimestamp(this.date.valueOf() / 1000);
 }
 /* Tip: Use this.date to get UTC/LOCAL Time information with the JS Date */
@@ -160,56 +162,53 @@ SkyDate.prototype.valueOf = function() {
 SkyDate.prototype.toString = function() {
     return this.sbstString;
 }
-/*** STATIC FUNCTIONS ***/
-SkyDate.currentTime = function() {
+/* Items pushed to prototype for inheritance purposes */
+SkyDate.prototype.EPOCH = h.SKYBLOCK_EPOCH;
+/* Helpers */
+SkyDate.prototype.currentTime = function() {
     var currentDate = new Date();
-    var currentDuration = (new SkyDuration(LOCALES.utc, Date.now() / 1000 - SKYBLOCK_EPOCH.UNIX_TS_UTC)).computing.SBST;
+    var currentDuration = (new SkyDuration(h.LOCALES.utc, Date.now() / 1000 - this.EPOCH.UNIX_TS_UTC)).computing.SBST;
     var result = {};
-    result[LOCALES.utc] = [currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), currentDate.getUTCHours(), currentDate.getUTCMinutes(), currentDate.getUTCSeconds()];
-    result[LOCALES.sbst] = [currentDuration[0] + 1, currentDuration[1], currentDuration[2] + 1, currentDuration[3], currentDuration[4], currentDuration[5], currentDuration[6]];
+    result[h.LOCALES.utc] = [currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), currentDate.getUTCHours(), currentDate.getUTCMinutes(), currentDate.getUTCSeconds()];
+    result[h.LOCALES.sbst] = [currentDuration[0] + 1, currentDuration[1], currentDuration[2] + 1, currentDuration[3], currentDuration[4], currentDuration[5], currentDuration[6]];
     return result;
 }
-SkyDate.matchMonth = function(str) {
+SkyDate.prototype.durationFromUTCUnixTime = function(ts) {
+    return new SkyDuration(h.LOCALES.utc, ts - this.EPOCH.UNIX_TS_UTC)
+}
+SkyDate.prototype.dateFromDuration = function(duration) {
+    return new Date((duration.valueOf() / h.RATIOS.magic + this.EPOCH.UNIX_TS_UTC) * 1000);
+}
+SkyDate.prototype.matchMonth = function(str) {
     for (var i = 0; i < 12; i++) {
-        if (new RegExp("\\b" + SkyDate.FULLMONTHS_UTC[i] + "\\b", "gi").test(str) ||
-            new RegExp("\\b" + SkyDate.SHORTMONTHRL[i] + "\\b", "gi").test(str) ||
-            new RegExp("\\b" + SkyDate.FULLMONTHS_SBST[i] + "\\b", "gi").test(str) ||
-            new RegExp("\\b" + SkyDate.SHORTMONTHSB[i] + "\\b", "gi").test(str))
+        if (new RegExp("\\b" + this.INPUTMONTHS_UTC[i] + "\\b", "gi").test(str) ||
+            new RegExp("\\b" + this.INPUTMONTHS_SBST[i] + "\\b", "gi").test(str))
             return i;
     }
 }
-SkyDate.dateTextParser = function(str) {
+SkyDate.prototype.dateTextParser = function(str) {
     var match;
     return [
         (match = str.match(/(?:\s|^)Y(\d+)(?:\s|$)/i)) ? Number(match[1]) : undefined,
-        (match = str.match(/(?:\s|^)M(\d+)(?:\s|$)/i)) ? Number(match[1]) - 1 : (match = str.match(/\b([A-Za-z]{2,})\b/i)) ? SkyDate.matchMonth(match[1]) : undefined,
-        (match = str.match(/(?:\s|^)D?(\d+)(?:\s|$)/i)) ? Number(match[1]) : undefined,
+        (match = str.match(/(?:\s|^)M(\d+)(?:\s|$)/i)) ? Number(match[1]) - 1 : (match = str.match(/\b([A-Za-z]{2,})\b/i)) ? this.matchMonth(match[1]) : undefined,
+        (match = str.match(/(?:\s|^)D(\d+)(?:\s|$)/i)) ? Number(match[1]) : undefined,
         (match = str.match(/(?:\s|^)(\d+):/)) ? Number(match[1]) : undefined,
         (match = str.match(/(?:\s|^)\d*:(\d+)/)) ? Number(match[1]) : undefined,
         (match = str.match(/(?:\s|^)\d*:\d*:(\d+)/)) ? Number(match[1]) : undefined
     ];
 }
-SkyDate.toOrdinal = function(num) {
-    return num + (num >= 11 && num <= 13 ? "th" : num % 10 === 1 ? "st" : num % 10 === 2 ? "nd" : num % 10 === 3 ? "rd" : "th");
-}
-SkyDate.to12HourTime = function(hour, min) {
-    var ampm = hour < 12 ? "AM" : "PM";
-    hour = (hour % 12) === 0 ? 12 : hour % 12;
-    return (hour.toString().padStart(2, "0")) + ":" + (min.toString().padStart(2, "0")) + ampm;
-}
-SkyDate.FULLMONTHS_UTC = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-];
-SkyDate.SHORTMONTHRL = [
+/* Data */
+SkyDate.prototype.INPUTMONTHS_UTC = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
-SkyDate.FULLMONTHS_SBST = [
-    "Early Spring", "Spring", "Late Spring", "Early Summer", "Summer", "Late Summer",
-    "Early Autumn", "Autumn", "Late Autumn", "Early Winter", "Winter", "Late Winter"
-];
-SkyDate.SHORTMONTHSB = [
+SkyDate.prototype.INPUTMONTHS_SBST = [
     "ESP", "SP", "LSP", "ESU", "SU", "LSU", "EAU", "AU", "LAU", "EWI", "WI", "LWI"
 ];
-SkyDate.UNIXTIME_TO_SBEPOCH_UTC = 1560275700; // The UNIX Timestamp (seconds from Unix Epoch) to SkyBlock Epoch using UTC units
-SkyDate.UNIXTIME_TO_SBEPOCH_SBST = 1560275700 * RATIOS.magic; // The UNIX Timestamp (seconds from Unix Epoch) to SkyBlock Epoch using SBST units
+SkyDate.prototype.SHORTMONTHS_UTC = h.FMTMSG.SHORTMONTHS_UTC;
+SkyDate.prototype.SHORTMONTHS_SBST = h.FMTMSG.SHORTMONTHS_SBST;
+SkyDate.prototype.FULLMONTHS_UTC = h.FMTMSG.FULLMONTHS_UTC;
+SkyDate.prototype.FULLMONTHS_SBST = h.FMTMSG.FULLMONTHS_SBST;
+/**
+ * Pushed static members from previous editions into prototype
+ * in favour of customizability using inheritance.
+ **/
