@@ -182,7 +182,7 @@ SkyRoutine.prototype.onEventEnd = function(noStateChanges) {
 }
 SkyRoutine.prototype.passTheBall = function(callback, startSkyDate) {
     var now = new this.SkyDateConstructor();
-    var till = Math.floor(Math.max(startSkyDate - now, 0) / h.RATIOS.magic * 1000); // convert SBST seconds to UTC milliseconds
+    var till = Math.floor(Math.max(startSkyDate - now, 0) / h.MAGIC_RATIO * 1000); // convert SBST seconds to UTC milliseconds
     var _this = this;
     // Only schedule tasks within one day
     if (till < 86400000) {
@@ -201,7 +201,7 @@ SkyRoutine.prototype.callEventSet = function(eventset) {
 SkyRoutine.prototype.startCountdown = function(callback) {
     var _this = this;
     // align to system clock
-    var countTo = this.nextEventTime / h.RATIOS.magic,
+    var countTo = this.nextEventTime / h.MAGIC_RATIO,
         countToDate = new this.SkyDateConstructor(new SkyDuration(h.LOCALES.sbst, this.nextEventTime)),
         countFromDate = new this.SkyDateConstructor(new SkyDuration(h.LOCALES.sbst, this.currentEventTime));
     var alignTout = setTimeout(function () {

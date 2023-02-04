@@ -58,9 +58,9 @@ var h = {
         3: 3600, // hour-to-second ratio
         2: 86400, // day-to-second ratio
         1: 2678400, // month-to-second (=31 days) ratio
-        0: 32140800, // year-to-second (=372 days) ratio
-        magic: 72 // magic ratio
+        0: 32140800 // year-to-second (=372 days) ratio
     },
+    MAGIC_RATIO: 72,
     DATE_FUNC_MAP: [
         "FullYear",
         "Month",
