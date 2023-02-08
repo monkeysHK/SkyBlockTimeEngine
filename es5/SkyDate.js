@@ -3,7 +3,7 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 2.0
+ * @version 2.1
  */
 /**
  * **SkyDate**  
@@ -127,42 +127,42 @@ SkyDate.prototype.setTime = function (locale, year, monthIndex, day, hours, minu
     this.UNIX_TS_SBST = this.EPOCH.UNIX_TS_SBST + this.SKYBLOCK_TS_SBST; // The UNIX Timestamp (seconds from Unix Epoch) to this instance using SBST units
     this.UNIX_TS_UTC = this.EPOCH.UNIX_TS_UTC + this.SKYBLOCK_TS_UTC; // The UNIX Timestamp (seconds from Unix Epoch) to this instance using UTC units
     return this; // note: this.valueOf() == SKYBLOCK_TS_SBST
-}
+};
 /* Setters */
 SkyDate.prototype.setSBSTTimestamp = function (ts) {
     // ts in SBST seconds (not ms)!
     return this.setTime(new SkyDuration(h.LOCALES.sbst, ts));
-}
+};
 SkyDate.prototype.setUTCTimestamp = function (ts) {
     // ts in UTC seconds (not ms)!
     return this.setTime(this.durationFromUTCUnixTime(ts));
-}
+};
 SkyDate.prototype.addDuration = function (sbstSeconds) {
     this.duration.addSBSTTime(h.UNITS.second, sbstSeconds);
     return this.setTime(this.duration);
-}
+};
 SkyDate.prototype.setSBSTTime = function (unit, value) {
     if (unit >= h.UNITS.year && unit <= h.UNITS.second)
         this.duration.addSBSTTime(unit, h.checkNumber(value) - this.computing.SBST[unit]);
     return this.setTime(this.duration);
-}
+};
 SkyDate.prototype.setLocalTime = function (unit, value) {
     if (unit >= h.UNITS.year && unit <= h.UNITS.second)
         this.date["set" + h.DATE_FUNC_MAP[unit]](h.checkNumber(value));
     return this.setUTCTimestamp(this.date.valueOf() / 1000);
-}
+};
 SkyDate.prototype.setUTCTime = function (unit, value) {
     if (unit >= h.UNITS.year && unit <= h.UNITS.second)
         this.date["setUTC" + h.DATE_FUNC_MAP[unit]](h.checkNumber(value));
     return this.setUTCTimestamp(this.date.valueOf() / 1000);
-}
+};
 /* Tip: Use this.date to get UTC/LOCAL Time information with the JS Date */
 SkyDate.prototype.valueOf = function () {
     return this.SKYBLOCK_TS_SBST; // Return the SKYBLOCK timestamp (seconds from SkyBlock Epoch) of this instance using SBST units
-}
+};
 SkyDate.prototype.toString = function () {
     return this.sbstString;
-}
+};
 /* Items pushed to prototype for inheritance purposes */
 SkyDate.prototype.EPOCH = h.SKYBLOCK_EPOCH;
 /* Helpers */
@@ -173,20 +173,20 @@ SkyDate.prototype.currentTime = function () {
     result[h.LOCALES.utc] = [currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), currentDate.getUTCHours(), currentDate.getUTCMinutes(), currentDate.getUTCSeconds()];
     result[h.LOCALES.sbst] = [currentDuration[0] + 1, currentDuration[1], currentDuration[2] + 1, currentDuration[3], currentDuration[4], currentDuration[5]];
     return result;
-}
+};
 SkyDate.prototype.durationFromUTCUnixTime = function (ts) {
-    return new SkyDuration(h.LOCALES.utc, ts - this.EPOCH.UNIX_TS_UTC)
-}
+    return new SkyDuration(h.LOCALES.utc, ts - this.EPOCH.UNIX_TS_UTC);
+};
 SkyDate.prototype.dateFromDuration = function (duration) {
     return new Date((duration.valueOf() / h.MAGIC_RATIO + this.EPOCH.UNIX_TS_UTC) * 1000);
-}
+};
 SkyDate.prototype.matchMonth = function (str) {
     for (var i = 0; i < 12; i++) {
         if (new RegExp("\\b" + this.INPUTMONTHS_UTC[i] + "\\b", "gi").test(str) ||
             new RegExp("\\b" + this.INPUTMONTHS_SBST[i] + "\\b", "gi").test(str))
             return i;
     }
-}
+};
 SkyDate.prototype.dateTextParser = function (str) {
     var match;
     return [
@@ -197,7 +197,7 @@ SkyDate.prototype.dateTextParser = function (str) {
         (match = str.match(/(?:\s|^)\d*:(\d+)/)) ? Number(match[1]) : undefined,
         (match = str.match(/(?:\s|^)\d*:\d*:(\d+)/)) ? Number(match[1]) : undefined
     ];
-}
+};
 /* Data */
 SkyDate.prototype.INPUTMONTHS_UTC = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"

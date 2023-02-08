@@ -3,7 +3,7 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 2.0
+ * @version 2.1
  */
 /**
  * **SkyAlpha**  
@@ -19,7 +19,7 @@ function SkyDateAlpha() {
 // Class Inheritance
 Object.setPrototypeOf(
     SkyDateAlpha.prototype,
-    SkyDate.prototype,
+    SkyDate.prototype
 );
 // Class Overrides
 SkyDateAlpha.prototype.EPOCH = h.ALPHA_SKYBLOCK_EPOCH;
@@ -31,7 +31,7 @@ function SkyRoutineAlpha() {
 // Class Inheritance
 Object.setPrototypeOf(
     SkyRoutineAlpha.prototype,
-    SkyRoutine.prototype,
+    SkyRoutine.prototype
 );
 // Class Overrides
 SkyRoutineAlpha.prototype.SkyDateConstructor = SkyDateAlpha;

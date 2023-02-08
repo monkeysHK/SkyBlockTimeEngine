@@ -3,7 +3,7 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 2.0
+ * @version 2.1
  */
 /**
  * **SkyRoutine**  
@@ -13,9 +13,36 @@
 function SkyRoutine(str) {
     this.tasksId = -1;
     this.tasks = []; // array of { event: <any STATES>, cb: function }
-    this.timeoutStack = [];
+    this.taskStack = [];
     this.definition = str;
 }
+/* Maintain a Countdown Stack Privately */
+/* All derived classes share this stack */
+var countdownStackId = -1;
+var countdownStack = [];
+var countdownStackAdd = function(callback) {
+    countdownStackId++;
+    countdownStack[countdownStackId] = callback;
+    return countdownStackId;
+};
+var countdownStackRemove = function(id) {
+    if (id in countdownStack) {
+        delete countdownStack[id];
+        return true;
+    }
+    return false;
+};
+var alignTout = setTimeout(function () {
+    clearTimeout(alignTout);
+    // now start actual countdown
+    setInterval(function () {
+        for (var i in countdownStack)
+            countdownStack[i]();
+    }, 1000);
+    // call it the first time
+    for (var i in countdownStack)
+        countdownStack[i]();
+}, (new Date()).valueOf() % 1000);
 /*** MEMBER FUNCTIONS ***/
 SkyRoutine.prototype.trigger = function(str) {
     this.definition = str || this.definition;
@@ -103,15 +130,15 @@ SkyRoutine.prototype.trigger = function(str) {
         this.onEventStart(true);
     else
         this.onEventEnd(true);
-}
+};
 SkyRoutine.prototype.pause = function() {
-    for (var i in this.timeoutStack)
-        clearTimeout(this.timeoutStack[i]);
-    this.timeoutStack = [];
-}
+    for (var i in this.taskStack)
+        clearTimeout(this.taskStack[i]);
+    this.taskStack = [];
+};
 SkyRoutine.prototype.removeTimeout = function(id) {
-    this.timeoutStack.splice(this.timeoutStack.indexOf(id), 1);
-}
+    this.taskStack.splice(this.taskStack.indexOf(id), 1);
+};
 SkyRoutine.prototype.addEvent = function(eventState, callback) {
     if (Object.values(h.STATES).includes(eventState)) {
         this.tasksId++;
@@ -123,22 +150,22 @@ SkyRoutine.prototype.addEvent = function(eventState, callback) {
             callback(this.currentState);
         return this.tasksId;
     }
-}
+};
 SkyRoutine.prototype.removeEvent = function(id) {
     if (id in this.tasks) {
         delete this.tasks[id];
         return true;
     }
     return false;
-}
+};
 SkyRoutine.prototype.getPeriod = function(forward) { // forward must be +ve integer
     if (this.routinePtr + (forward || 0) < 0)
         return 0;
     return this.cycle[(this.routinePtr + (forward || 0)) % this.cycle.length];
-}
+};
 SkyRoutine.prototype.advancePeriod = function(forward) { // forward must be +ve integer
     this.routinePtr = (this.routinePtr + (forward || 0)) % this.cycle.length;
-}
+};
 SkyRoutine.prototype.onEventStart = function(noStateChanges) {
     // State Changes
     if (!noStateChanges) {
@@ -157,7 +184,7 @@ SkyRoutine.prototype.onEventStart = function(noStateChanges) {
     if ((this.limit && this.routineExecutions >= this.limit) || // reached execution limit
         (this.until && this.nextEventTime >= this.until)) // next start time reached/over date limit
         this.nextEventTime = null;
-}
+};
 SkyRoutine.prototype.onEventEnd = function(noStateChanges) {
     // Check termination
     if (!this.nextEventTime) {
@@ -179,7 +206,7 @@ SkyRoutine.prototype.onEventEnd = function(noStateChanges) {
     this.callEventSet(h.STATES.WAITING);
     // Activate Next
     this.passTheBall(this.onEventStart.bind(this), this.nextEventTime);
-}
+};
 SkyRoutine.prototype.passTheBall = function(callback, startSkyDate) {
     var now = new this.SkyDateConstructor();
     var till = Math.floor(Math.max(startSkyDate - now, 0) / h.MAGIC_RATIO * 1000); // convert SBST seconds to UTC milliseconds
@@ -190,36 +217,31 @@ SkyRoutine.prototype.passTheBall = function(callback, startSkyDate) {
             callback();
             _this.removeTimeout(tout);
         }, till);
-        _this.timeoutStack.push(tout);
+        _this.taskStack.push(tout);
     }
-}
+};
 SkyRoutine.prototype.callEventSet = function(eventset) {
     for (var i in this.tasks)
         if (this.tasks[i].event === eventset)
             this.tasks[i].cb(this.currentState);
-}
+};
 SkyRoutine.prototype.startCountdown = function(callback) {
     var _this = this;
     // align to system clock
     var countTo = this.nextEventTime / h.MAGIC_RATIO,
         countToDate = new this.SkyDateConstructor(new SkyDuration(h.LOCALES.sbst, this.nextEventTime)),
         countFromDate = new this.SkyDateConstructor(new SkyDuration(h.LOCALES.sbst, this.currentEventTime));
-    var alignTout = setTimeout(function () {
-        clearTimeout(alignTout);
-        // now start actual countdown
-        var countdownIntr = setInterval(function () {
-            var now = Date.now() / 1000 - _this.EPOCH.UNIX_TS_UTC;
-            var utcSecondsRemain = Math.floor(countTo - now);
-            if (utcSecondsRemain <= 0)
-                clearTimeout(countdownIntr);
-            callback(countdownIntr, utcSecondsRemain, countToDate, countFromDate, _this.currentState);
-        }, 1000);
-        // call it the first time
+    var stopCountdown = function(id) {
+        countdownStackRemove(id);
+    };
+    var countdownId = countdownStackAdd(function() {
         var now = Date.now() / 1000 - _this.EPOCH.UNIX_TS_UTC;
         var utcSecondsRemain = Math.floor(countTo - now);
-        callback(countdownIntr, utcSecondsRemain, countToDate, countFromDate, _this.currentState);
-    }, (new Date()).valueOf() % 1000);
-}
+        if (utcSecondsRemain <= 0)
+            countdownStackRemove(countdownId);
+        callback(stopCountdown.bind(null, countdownId), utcSecondsRemain, countToDate, countFromDate, _this.currentState);
+    });
+};
 /* Items pushed to prototype for inheritance purposes */
 SkyRoutine.prototype.SkyDateConstructor = SkyDate;
 SkyRoutine.prototype.EPOCH = h.SKYBLOCK_EPOCH;
@@ -231,8 +253,8 @@ SkyRoutine.prototype.routineTextParser = function(str) {
         limit: (match = str.match(/(?:\s|^)L\[(.*?)\]/)) ? match[1] : undefined, // a number
         until: (match = str.match(/(?:\s|^)U\[(.*?)\]/)) ? match[1] : undefined, // a date expr
         anchor: (match = str.match(/(?:\s|^)A\[(.*?)\]/)) ? match[1] : undefined // a date expr
-    }
-}
+    };
+};
 /**
  * Pushed static members from previous editions into prototype
  * in favour of customizability using inheritance.

@@ -3,7 +3,7 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 2.0
+ * @version 2.1
  */
 /**
  * **SkyDuration**  
@@ -78,23 +78,23 @@ SkyDuration.prototype.setDuration = function (locale, seconds, minutes, hours, d
     this.utcString = h.fmtFullDuration(0, 0, this.utcDays, this.utcHours, this.utcMinutes, this.utcSeconds, this.utc72thSecs);
     this.sbstString = h.fmtFullDuration(this.sbstYears, this.sbstMonths, this.sbstDays, this.sbstHours, this.sbstMinutes, this.sbstSeconds);
     return this;
-}
+};
 SkyDuration.prototype.toString = function () {
     return this.utcString + " (in UTC Duration), " + this.sbstString + " (in SBST Duration)";
-}
+};
 SkyDuration.prototype.valueOf = function () {
     return this.duration;
-}
+};
 SkyDuration.prototype.addUTCTime = function (unit, value) {
     if (unit >= h.UNITS.day && unit <= h.UNITS.second)
         this.addSBSTTime(h.UNITS.second, h.checkNumber(value) * h.RATIOS[unit] * h.MAGIC_RATIO);
     return this;
-}
+};
 SkyDuration.prototype.addSBSTTime = function (unit, value) {
     if (unit >= h.UNITS.year && unit <= h.UNITS.second)
         this.setDuration(h.LOCALES.sbst, this.valueOf() + h.checkNumber(value));
     return this;
-}
+};
 SkyDuration.prototype.durationTextParser = function (str) {
     var match;
     return [
@@ -104,8 +104,8 @@ SkyDuration.prototype.durationTextParser = function (str) {
         (match = str.match(/(?:\s|^)(\d+)h(?:\s|$)/i)) ? Number(match[1]) : undefined,
         (match = str.match(/(?:\s|^)(\d+)m(?:\s|$)/i)) ? Number(match[1]) : undefined,
         (match = str.match(/(?:\s|^)(\d+)s(?:\s|$)/i)) ? Number(match[1]) : undefined,
-    ]
-}
+    ];
+};
 /**
  * Pushed static members from previous editions into prototype
  * in favour of customizability using inheritance.
