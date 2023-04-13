@@ -3,8 +3,11 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 2.1
+ * @version 3.0
  */
+import {SkyRoutine} from "./SkyRoutine.js";
+import {SkyDate} from "./SkyDate.js";
+import {h} from "./SBTEHelpers.js";
 /**
  * **SkyAlpha**  
  * This script creates children classes with the time is shifted to match the time system on the Alpha Network of present time  
@@ -36,3 +39,6 @@ Object.setPrototypeOf(
 // Class Overrides
 SkyRoutineAlpha.prototype.SkyDateConstructor = SkyDateAlpha;
 SkyRoutineAlpha.prototype.EPOCH = h.ALPHA_SKYBLOCK_EPOCH;
+
+/* Exports */
+export {SkyDateAlpha, SkyRoutineAlpha};

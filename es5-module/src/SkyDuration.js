@@ -3,8 +3,9 @@
  * @author MonkeysHK <https://github.com/MonkeysHK>
  * @description A web time engine for the time system in Hypixel SkyBlock.
  * @license GPL-3.0-or-later GNU General Public License v3.0 or later <https://www.gnu.org/licenses/gpl-3.0-standalone.html>
- * @version 2.1
+ * @version 3.0
  */
+import {h} from "./SBTEHelpers.js";
 /**
  * **SkyDuration**  
  * This script translates between SkyBlock Durations and UTC Durations,  
@@ -110,3 +111,5 @@ SkyDuration.prototype.durationTextParser = function (str) {
  * Pushed static members from previous editions into prototype
  * in favour of customizability using inheritance.
  **/
+/* Exports */
+export {SkyDuration};

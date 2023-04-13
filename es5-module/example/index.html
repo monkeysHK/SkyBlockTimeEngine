@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script type="module" src="./test.js"></script>
+    <title>Document</title>
+</head>
+<style>
+    body {
+        background-color: #222;
+        color: #ccc;
+        margin-left: 1em;
+        margin-right: 1em;
+        line-height: 20px;
+    }
+    section:not(:last-child) {
+        margin-bottom: 1em;
+    }
+    .sbte-clock,
+    .sbte-timestamp,
+    .sbte-routine {
+        margin-left: 2em;
+    }
+    .sbte-routine .waiting {
+        color: #ffffff;
+    }
+    .sbte-routine .ongoing {
+        color: #00ff00;
+    }
+    .sbte-routine .stopped {
+        color: #d87093;
+    }
+    @media only screen and (min-width: 800px) {
+        body {
+            margin-left: 20%;
+            margin-right: 20%;
+        }
+    }
+</style>
+
+<body>
+    <main>
+        <section>
+            <h1>SkyBlock Time Engine Examples</h1>
+        </section>
+        <section>
+            <p>Link: <a href="https://github.com/MonkeysHK/SkyBlockTimeEngine" target="_blank">Repository & Docs</a></p>
+            <p>
+                The examples use Main Server time.
+                Usage for Alpha Network time is the same, except you have to swap out SkyDate and SkyRoutine with
+                SkyDateAlpha and SkyRoutineAlpha from `SkyAlpha.js`
+            </p>
+        </section>
+        <section>
+            <h2>1. Example SkyBlock Clock</h2>
+        </section>
+        <section>
+            <div>Current Time on Main Server (update interval 833ms)</div>
+            <div class="sbte-clock">
+                <div class="sbte-clock-time">
+                    <span>Actual time: </span><span class="hour12"></span>:<span class="minute-actual"></span>:<span class="second"></span><span class="ampm"></span>
+                </div>
+                <div class="sbte-clock-time">
+                    <span>Displayed time: </span><span class="hour12"></span>:<span class="minute"></span><span class="ampm"></span>
+                </div>
+                <div class="sbte-clock-date">
+                    <span>Date: </span><span class="day-ordinal"></span> of <span class="season"></span>, Year <span class="year"></span>
+                </div>
+            </div>
+        </section>
+        <section>
+            <h2>2. Example SkyBlock Date Display</h2>
+        </section>
+        <section>
+            <div>The non-exact date expression "27 ESU" evaluates into 27th of current year, Early Summer 00:00.</div>
+            <div class="sbte-timestamp" data-skydate="27 ESU">
+                <div>UTC time: <span class="utc"></span></div>
+                <div>Local time: <span class="local"></span></div>
+                <div>SkyBlock time: <span class="sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>The non-exact date expression "27 LWI" evaluates into 27th of current year, Late Winter 00:00.</div>
+            <div class="sbte-timestamp" data-skydate="27 LWI">
+                <div>UTC time: <span class="utc"></span></div>
+                <div>Local time: <span class="local"></span></div>
+                <div>SkyBlock time: <span class="sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>The non-exact date expression "D1 13:00 -U" evaluates into 1st day of current month, at 13:00 in UTC.</div>
+            <div class="sbte-timestamp" data-skydate="D1 13:00 -U">
+                <div>UTC time: <span class="utc"></span></div>
+                <div>Local time: <span class="local"></span></div>
+                <div>SkyBlock time: <span class="sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>The non-exact date expression ":30 -U" evaluates to half-past the current hour in UTC.</div>
+            <div class="sbte-timestamp" data-skydate=":30 -U">
+                <div>UTC time: <span class="utc"></span></div>
+                <div>Local time: <span class="local"></span></div>
+                <div>SkyBlock time: <span class="sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>The exact date expression "D27 M9 Y89 -S" evaluates to that specified date in SBST.</div>
+            <div class="sbte-timestamp" data-skydate="D27 M9 Y89 -S">
+                <div>UTC time: <span class="utc"></span></div>
+                <div>Local time: <span class="local"></span></div>
+                <div>SkyBlock time: <span class="sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>The exact date expression "D27 SEP Y2019 -U" evaluates to that specified date in UTC.</div>
+            <div class="sbte-timestamp" data-skydate="D27 SEP Y2019 -U">
+                <div>UTC time: <span class="utc"></span></div>
+                <div>Local time: <span class="local"></span></div>
+                <div>SkyBlock time: <span class="sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <h2>3. Example Countdown</h2>
+        </section>
+        <section>
+            <div>Routine 1: A[D27 LAU Y89 -S] C[1mo -S / 11mo -S]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y89 -S] C[1mo -S / 11mo -S]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 2: A[D27 LAU Y89 -S] C[12h -S / 12h -S]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y89 -S] C[12h -S / 12h -S]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 3: A[D27 LAU Y89 12:00 -S] C[12h -S / 12h -S]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y89 12:00 -S] C[12h -S / 12h -S]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 4 with UTC time: A[Y2019 M6 D12 -U] C[0 / 365d -U]</div>
+            <div class="sbte-routine" data-routine="A[Y2019 M6 D12 -U] C[0 / 365d -U]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 5 with until date: A[D27 LAU Y89 -S] C[12h -S / 12h -S] U[D9 LAU Y177]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y89 -S] C[12h -S / 12h -S] U[D9 LAU Y177]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 6 with until date: A[D27 LAU Y89 -S] C[1y -S / 2y -S] U[D1 LAU Y200 -S]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y89 -S] C[1y -S / 2y -S] U[D1 LAU Y200 -S]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 7 with until date: A[D27 LAU Y89 -S] C[1y -S / 2y -S] U[D1 LAU Y300 -S]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y89 -S] C[1y -S / 2y -S] U[D1 LAU Y300 -S]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 8 with execution # limit: A[D27 LAU Y89 -S] C[1y -S / 2y -S] L[40]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y89 -S] C[1y -S / 2y -S] L[40]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 9 with cycle length of 0 (force execution # limit to 1): A[D27 LAU Y89 -S]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y89 -S]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+        <section>
+            <div>Routine 10 with a 4-phase cycle definition: A[D27 LAU Y200 03:00 -S] C[3h -S / 11h -S / 3h -S / 7h -S]</div>
+            <div class="sbte-routine" data-routine="A[D27 LAU Y200 03:00 -S] C[3h -S / 11h -S / 3h -S / 7h -S]">
+                <div><span class="cd-name"></span>: <span class="cd-timer"></span></div>
+                <div>UTC time: <span class="cd-utc"></span></div>
+                <div>Local time: <span class="cd-local"></span></div>
+                <div>SkyBlock time: <span class="cd-sbst"></span></div>
+            </div>
+        </section>
+    </main>
+</body>
+
+</html>
