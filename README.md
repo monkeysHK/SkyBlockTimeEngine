@@ -1,23 +1,23 @@
-
 # SkyBlock Time Engine
 
 SBTE is an open-sourced web time engine for the time system in Hypixel SkyBlock.
 
 This script was originally created for the [Hypixel SkyBlock Wiki](https://hypixel-skyblock.fandom.com/).
 
-## Usage Example
-For standard web integration, see the es5-module/examples folder (along with source in the es5-module/src folder). Note: To open it on your own machine, due to browser's CORS policy, you might have to use [VSCode Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) or other workarounds.
+## Code and Example Usage
 
-For MediaWiki integration, see the [TimingEvents](https://hypixel-skyblock.fandom.com/wiki/MediaWiki:Gadget-TimingEvents.js) implementation (along with source in the es5-mediawiki folder). It uses [mw.hook](https://doc.wikimedia.org/mediawiki-core/master/js/#!/api/mw.hook) to ensure correct running sequence.
+The code is written in the latest EMCAScript standard. A build stage calls on Babel and Webpack: the prior produces the ES5 compliant code used on MediaWiki, and the latter combines all scripts into a single file starting from entry.js. The generated file goes to the `dist` folder.
+
+For standard web integration, see the `examples` folder (along with sources in the `src` folder, except entry.js). Note: To open it on your own machine, due to browser's CORS policy, you might have to use [VSCode Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) or other workarounds.
+
+For MediaWiki integration, see the [TimingEvents](https://hypixel-skyblock.fandom.com/wiki/MediaWiki:Gadget-TimingEvents.js) implementation (along with sources in the `src` folder). It uses [mw.hook](https://doc.wikimedia.org/mediawiki-core/master/js/#!/api/mw.hook) to ensure correct running sequence.
 
 ## Content
-There are six custom classes defined in the files to facilitate web integration of the Hypixel SkyBlock Standard Time (SBST, "SkyBlock time"). The design is modular; meaning it starts from a module handling durations, then dates, then routines.
+There are six classes that facilitate web integration of the Hypixel SkyBlock Standard Time (SBST, "SkyBlock time"). The design is modular; meaning it starts from a module handling durations, then dates, then routines.
 
 Traditionally, SkyDate supported [Main Server time](https://hypixel-skyblock.fandom.com/wiki/Time_Systems). Prototype-based inheritance in JavaScript made adjusting to [Alpha Server time](https://hypixel-skyblock.fandom.com/wiki/Alpha_Hypixel_Network#Time_on_Alpha_Network) very easy.
 
-When "file" is mentioned in the following table, it is refering to the es5-module implementation.
-
-| Class | Description | Defined in file | Dependent classes |
+| Class | Description | Source file | Dependent classes |
 | ----- | ----------- | --------------- | ----------------- |
 | SkyDuration | Represents a duration and handles conversions between SBST and UTC. | SkyDuration.js |  |
 | SkyDate | Represents a date and handles conversions between SBST, UTC and LOCAL. Uses Main Server time. | SkyDate.js | SkyDuration |
@@ -95,11 +95,12 @@ SkyRoutine can trace the number of would-have executions before the browser run 
 
 ## Changelog
 
-| Version | Changes | Supported Files |
+| Version | Changes | Target |
 | ------- | ------- | ----- |
-| 3.0 | Breaking change: Routine cycle separator changed from `\|` to `/` <br> Switched to using ECMAScript module | ES5-module, ES5-mediawiki |
-| 2.1 | Undocumented. | ES5, ES5-mediawiki |
-| 2.0 | Undocumented. | ES5, ES5-mediawiki |
-| 1.0 | Undocumented. | ES5, ES6, ES5-mediawiki |
+| 3.1 | Babel and webpack integration for transpiling to ES5 compliant bundle | Latest (module) |
+| 3.0 | Breaking change: Routine cycle separator changed from `\|` to `/` <br> Switched to using ECMAScript module | ES5 (module), ES5 (bundled for mediawiki) |
+| 2.1 | Undocumented. | ES5, ES5 (bundled for mediawiki) |
+| 2.0 | Undocumented. | ES5, ES5 (bundled for mediawiki) |
+| 1.0 | Undocumented. | ES5, ES6, ES5 (bundled for mediawiki) |
 | beta 2 | Undocumented. | ES5, ES6 |
 | beta 1 | Undocumented. | ES6 |
